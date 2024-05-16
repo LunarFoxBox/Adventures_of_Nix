@@ -19,6 +19,14 @@ class Load extends Phaser.Scene {
         });
 
         this.load.multiatlas("particles", "particles.json");
+
+        this.load.audio("jump", "jump.wav"); // Created
+        this.load.audio("coin_pickup", "pickup_coin.wav"); // Created
+
+        // Music by xDeviruchi under Attribution-ShareAlike 4.0 International license
+        // https://xdeviruchi.itch.io/8-bit-fantasy-adventure-music-pack
+        this.load.audio("main_music", "xDeviruchi - And The Journey Begins .wav");
+        
     }
 
     create() {
@@ -39,9 +47,9 @@ class Load extends Phaser.Scene {
             key: 'idle',
             defaultTextureKey: "platformer_characters",
             frames: [
-                { frame: "tile_0260.png" }
+                { frame: "tile_0260.png"
+                }
             ],
-            repeat: -1
         });
 
         this.anims.create({
@@ -50,6 +58,26 @@ class Load extends Phaser.Scene {
             frames: [
                 { frame: "tile_0265.png" }
             ],
+        });
+
+        this.anims.create({
+            key: 'fall',
+            defaultTextureKey: "platformer_characters",
+            frames: [
+                { frame: "tile_0262.png"}
+            ],
+        });
+
+        this.anims.create({
+            key: 'grass_shake',
+            defaultTextureKey: "tilemap_sheet",
+            frames: [
+                {frame: 18, // Grass key frame 1
+                frame: 38 // Grass key frame 2
+                }
+            ],
+            frameRate: 15,
+            repeat: -1
         });
 
          // ...and pass to the next Scene
