@@ -1,0 +1,60 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "level_1.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "#monochrome_tilemap_packed": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "level_1.tmx": {
+            "scale": 2,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 1260.5,
+                "y": 290.5
+            }
+        },
+        "level_1.tmx#monochrome_tilemap_packed": {
+            "scaleInDock": 1
+        },
+        "level_1.tmx#monochrome_tilemap_transparent": {
+            "scaleInDock": 1
+        },
+        "level_1.tmx#monochrome_tilemap_transparent_packed": {
+            "scaleInDock": 1
+        }
+    },
+    "last.exportedFilePath": "C:/Users/lunar/Documents/School/Courses/CMPM/120/Games/SnS/assets",
+    "last.imagePath": "C:/Users/lunar/Documents/School/Courses/CMPM/120/Games/Nullborne/assets/Tilemap",
+    "map.height": 120,
+    "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 18,
+    "map.tileWidth": 18,
+    "map.width": 240,
+    "openFiles": [
+        "level_1.tmx"
+    ],
+    "project": "adventures_of_nix.tiled-project",
+    "property.type": "bool",
+    "recentFiles": [
+        "level_1.tmx"
+    ],
+    "tileset.embedInMap": true,
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    },
+    "tileset.useTransparentColor": false
+}
