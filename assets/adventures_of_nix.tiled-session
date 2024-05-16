@@ -18,11 +18,11 @@
             "scaleInEditor": 1
         },
         "level_1.tmx": {
-            "scale": 2,
-            "selectedLayer": 3,
+            "scale": 1.5,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 1260.5,
-                "y": 290.5
+                "x": 574.6666666666667,
+                "y": 270
             }
         },
         "level_1.tmx#monochrome_tilemap_packed": {
@@ -33,10 +33,13 @@
         },
         "level_1.tmx#monochrome_tilemap_transparent_packed": {
             "scaleInDock": 1
+        },
+        "level_1.tmx#tilemap_packed": {
+            "scaleInDock": 1
         }
     },
-    "last.exportedFilePath": "C:/Users/lunar/Documents/School/Courses/CMPM/120/Games/SnS/assets",
-    "last.imagePath": "C:/Users/lunar/Documents/School/Courses/CMPM/120/Games/Nullborne/assets/Tilemap",
+    "last.exportedFilePath": "C:/Users/lunar/Documents/School/Courses/CMPM/120/Games/Adventures_of_Nix/assets",
+    "last.imagePath": "C:/Users/lunar/Documents/School/Courses/CMPM/120/Games/Adventures_of_Nix/assets",
     "map.height": 120,
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",

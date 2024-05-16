@@ -17,6 +17,8 @@ class Load extends Phaser.Scene {
             frameWidth: SPRITE_SIZE,
             frameHeight: SPRITE_SIZE
         });
+
+        this.load.multiatlas("particles", "particles.json");
     }
 
     create() {
