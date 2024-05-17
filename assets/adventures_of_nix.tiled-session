@@ -18,11 +18,11 @@
             "scaleInEditor": 1
         },
         "level_1.tmx": {
-            "scale": 0.75,
-            "selectedLayer": -1,
+            "scale": 4,
+            "selectedLayer": 8,
             "viewCenter": {
-                "x": 1332,
-                "y": 145.33333333333337
+                "x": 499,
+                "y": 662
             }
         },
         "level_1.tmx#monochrome_tilemap_packed": {
@@ -54,6 +54,7 @@
     "recentFiles": [
         "level_1.tmx"
     ],
+    "resizeMap.removeObjects": false,
     "tileset.embedInMap": true,
     "tileset.tileSize": {
         "height": 16,

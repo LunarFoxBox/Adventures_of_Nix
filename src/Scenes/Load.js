@@ -22,6 +22,8 @@ class Load extends Phaser.Scene {
 
         this.load.audio("jump", "jump.wav"); // Created
         this.load.audio("coin_pickup", "pickup_coin.wav"); // Created
+        this.load.audio('player_hurt', 'hurt.wav'); // Created
+        this.load.audio('player_land', 'impact.wav'); // Created
 
         // Music by xDeviruchi under Attribution-ShareAlike 4.0 International license
         // https://xdeviruchi.itch.io/8-bit-fantasy-adventure-music-pack
@@ -78,6 +80,14 @@ class Load extends Phaser.Scene {
             ],
             frameRate: 15,
             repeat: -1
+        });
+
+        this.anims.create({
+            key: 'player_death',
+            defaultTextureKey: "platformer_characters",
+            frames: [
+                { frame: "tile_0266.png"}
+            ],
         });
 
          // ...and pass to the next Scene

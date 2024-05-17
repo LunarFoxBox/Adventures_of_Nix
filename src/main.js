@@ -26,15 +26,16 @@ let config = {
             gravity: {
                 x: 0,
                 y: 0
-            }
+            },
+            fps: 60
         }
     },
     width: 2240,
-    height: 480,
+    height: 800,
     scene: [Load, Platformer]
 }
 
-var cursors;
+var controls;
 const SCALE = 3;
 const SPRITE_SIZE = 16;
 const SECONDS = 1000;
