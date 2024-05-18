@@ -24,6 +24,7 @@ class Load extends Phaser.Scene {
         this.load.audio("coin_pickup", "pickup_coin.wav"); // Created
         this.load.audio('player_hurt', 'hurt.wav'); // Created
         this.load.audio('player_land', 'impact.wav'); // Created
+        this.load.audio('dash', 'dash.wav');
 
         // Music by xDeviruchi under Attribution-ShareAlike 4.0 International license
         // https://xdeviruchi.itch.io/8-bit-fantasy-adventure-music-pack

@@ -15,22 +15,17 @@ class Platformer extends Phaser.Scene {
 
         this.shakeY = 0.005 // Y axis for camera shake when landing
         this.isLanding = false; // Keeps track of if the player is landing or not
-        this.inAir = false; // Keeps track of if the player is in the air
         this.airTime = 0; // ticks in air
+        this.maxAirTime = 200; // Max amount of ticks for air time
 
         this.shakeVector = new Phaser.Math.Vector2(0, this.shakeY);
+        this.shakeStrength = 0.08;
+        this.shakeLength = 0.15;
 
         this.PARTICLE_VELOCITY = 50;
 
         this.DASH_STRENGTH = 800;
-        this.MAX_DASH_LENGTH = 5;
-        this.dash_length = this.MAX_DASH_LENGTH;
-        this.dashUsed = false;
-
         this.SPRING_STRENGTH = -1200;
-
-        this.coinVFXTimeMax = 20;
-        this.coinVFXTime = this.coinVFXTimeMax;
 
         this.playerHealth = 3;
         this.maxInvincibilityTime = 60;
@@ -46,6 +41,7 @@ class Platformer extends Phaser.Scene {
         my.sfx.coinPickup = this.sound.add('coin_pickup', {volume: 0.7});
         my.sfx.playerHurt = this.sound.add('player_hurt', {volume: 0.5});
         my.sfx.playerLand = this.sound.add('player_land', {volume: 0.3})
+        my.sfx.dash = this.sound.add('dash', {volume: 0.4});
         my.sfx.mainMusic = this.sound.add('main_music', {volume: 0.1});
         
         my.sfx.mainMusic.loop = true;
@@ -62,8 +58,11 @@ class Platformer extends Phaser.Scene {
         // Second parameter: key for the tilesheet (from this.load.image in Load.js)
         this.tileset = this.map.addTilesetImage("tilemap_packed", "tilemap_tiles");
 
-        // Create a layer
-        this.groundLayer = this.map.createLayer("Platforms", this.tileset, 0, 0);
+        // Create ground layer
+        this.groundLayer = this.map.createLayer("Ground", this.tileset, 0, 0);
+
+        // Create platform layer
+        this.platformLayer = this.map.createLayer("Platforms", this.tileset, 0, 0);
         
         // Create background layer
         this.backgroundLayer = this.map.createLayer("Background", this.tileset, 0, 0);
@@ -72,6 +71,9 @@ class Platformer extends Phaser.Scene {
         this.groundLayer.setCollisionByProperty({
             collides: true
         });
+        this.platformLayer.setCollisionByProperty({
+            collides: true
+        })
 
 
         // Create Spawn Point for player
@@ -98,12 +100,7 @@ class Platformer extends Phaser.Scene {
             key: "tilemap_sheet",
             frame: 183
         });
-
-        this.grass = this.map.createFromObjects("Grass", {
-            name: "grass",
-            key: "tilemap_sheet"
-        });
-        //this.grass.anims.play('grass', true);
+        
 
         this.springs = this.map.createFromObjects("Springs", {
             name: "spring",
@@ -117,6 +114,7 @@ class Platformer extends Phaser.Scene {
         this.physics.world.enable(this.coins, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.spikes, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.springs, Phaser.Physics.Arcade.STATIC_BODY);
+
 
         // Create a Phaser group out of the array this.coins
         // This will be used for collision detection below.
@@ -132,11 +130,15 @@ class Platformer extends Phaser.Scene {
         my.sprite.player.setCollideWorldBounds(false);
         my.sprite.player.setSize(SPRITE_SIZE, SPRITE_SIZE, true);
         my.sprite.player.setOffset(0, 0);
-
         // Set player's max speed
         my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX, this.MaxSpeedY);
 
-        // set up Phaser-provided cursor key input
+        // Enable collision handling
+        this.groundCollision = this.physics.add.collider(my.sprite.player, this.groundLayer);
+        this.platformCollision = this.physics.add.collider(my.sprite.player, this.platformLayer);
+
+
+        // set up control input
         controls = this.input.keyboard.addKeys(
             {
             'up': Phaser.Input.Keyboard.KeyCodes.W,
@@ -145,7 +147,6 @@ class Platformer extends Phaser.Scene {
             'right': Phaser.Input.Keyboard.KeyCodes.D,
             'dash': Phaser.Input.Keyboard.KeyCodes.SPACE
         });
-        console.log(controls)
 
         // UI Health
         this.hearts = this.map.createFromObjects("UI", {
@@ -172,36 +173,51 @@ class Platformer extends Phaser.Scene {
         // VFX
         // movement vfx
         my.vfx.walking = this.add.particles(0, 0, "particles", {
-            frame: ['smoke_01.png', 'smoke_02.png'],
-            scale: {start: 0.05, end: 0.01},
-            maxAliveParticles: 3,
+            frame: ['dirt_01.png', 'dirt_03.png'],
+            scale: {start: 0.02, end: 0.01},
+            maxAliveParticles: 2,
             lifespan: 350,
-            alpha: {start: 1, end: 0.1}, 
+            alpha: {start: 1, end: 0.4}, 
             follow: my.sprite.player,  // a game object or an arcade physics object
-	        followOffset: { x: -100, y: -30 },  // offset from object for emitter location
+	        followOffset: { x: 0, y: 6 },  // offset from object for emitter location
 
         });
+        my.vfx.walking.setParticleSpeed(0, 0);
         my.vfx.walking.stop();
 
         // Dash vfx
         my.vfx.dashing = this.add.particles(0, 0, "particles", {
-            frame: ['spark_01.png', 'spark_02.png'],
-            scale: {start: 0.05, end: 0.001},
+            frame: ['magic_05.png'],
+            scale: {start: 0.05, end: 0.08},
             maxAliveParticles: 8,
             lifespan: 350,
             alpha: {start: 1, end: 0.1}, 
         });
+        my.vfx.dashing.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
+        my.vfx.dashing.setParticleSpeed(0, 0);
         my.vfx.dashing.stop();
 
         my.vfx.jumping = this.add.particles(0, 0, "particles", {
-            frame: ['star_08.png', 'star_03.png'],
-            scale: {start: 0.05, end: 0.01},
-            lifespan: 600,
+            frame: ['magic_01.png', 'magic_02.png'],
+            scale: {start: 0.07, end: 0.07},
+            lifespan: 400,
             alpha: {start: 1, end: 0.1},
-            maxAliveParticles: 2,
-            hold: 1000
+            stopAfter: 2
         });
+        my.vfx.jumping.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
+        my.vfx.jumping.setParticleSpeed(0, 0);
         my.vfx.jumping.stop();
+
+        my.vfx.landing = this.add.particles(0, 0, "particles", {
+            frame: ['dirt_02.png'],
+            scale: {start: 0.02, end: 0.05},
+            lifespan: 200,
+            alpha: {start: 1, end: 0.4},
+            stopAfter: 10
+        });
+        my.vfx.landing.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
+        my.vfx.landing.setParticleSpeed(100, 0);
+        my.vfx.landing.stop();
 
         my.vfx.coinPickup = this.add.particles(0, 0, "particles", {
             frame: ['light_01.png', 'light_02.png', 'light_03.png'],
@@ -224,9 +240,6 @@ class Platformer extends Phaser.Scene {
 
         
         
-        
-        // Enable collision handling
-        this.physics.add.collider(my.sprite.player, this.groundLayer);
 
         // Handle collision detection with coins
         this.physics.add.overlap(my.sprite.player, this.coinGroup, (obj1, obj2) => {
@@ -234,13 +247,12 @@ class Platformer extends Phaser.Scene {
             my.vfx.coinPickup.y = obj2.y;
             my.sfx.coinPickup.play();
             my.vfx.coinPickup.start();
-            this.coinVFXTime = this.coinVFXTimeMax;
             obj2.destroy(); // remove coin on overlap
         });
 
         this.physics.add.overlap(my.sprite.player, this.spikeGroup, (obj1, obj2) => {
             if (this.playerHealth > 0 && this.invincibilityTime <= 0){
-                my.vfx.hurt.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
+                my.vfx.hurt.startFollow(my.sprite.player, my.sprite.player.displayWidth/2, my.sprite.player.displayHeight/2, false);
                 my.sfx.playerHurt.play();
                 my.vfx.hurt.start();
                 this.playerHealth--;
@@ -261,7 +273,7 @@ class Platformer extends Phaser.Scene {
          this.cameras.main.startFollow(my.sprite.player, true, 0.25, 0.25); // (target, [,roundPixels][,lerpX][,lerpY])
          this.cameras.main.setViewport(400, 0, this.map.widthInPixels/2, this.map.heightInPixels);
          this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
-         this.cameras.main.setDeadzone(50, 50);
+         this.cameras.main.setDeadzone(50, 25);
          this.cameras.main.setZoom(SCALE);
 
          this.input.keyboard.on(controls.dash, ()=>{
@@ -274,10 +286,10 @@ class Platformer extends Phaser.Scene {
         
         if (this.playerHealth <= 0){
             my.sprite.player.anims.play('player_death', true);
+            my.sprite.player.body.setAcceleration(0,0);
             if (this.deathTime <= 0){
                 my.sprite.player.anims.stop();
                 my.sfx.mainMusic.stop();
-                this.init();
                 this.scene.restart();
             }
             else{
@@ -293,10 +305,6 @@ class Platformer extends Phaser.Scene {
             my.sprite.player.setFlip(true, false);
             my.sprite.player.anims.play('walk', true);
 
-            my.vfx.walking.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
-
-            my.vfx.walking.setParticleSpeed(this.PARTICLE_VELOCITY, 0);
-
             // Only play smoke effect if touching the ground
             if (my.sprite.player.body.blocked.down) {
 
@@ -310,10 +318,6 @@ class Platformer extends Phaser.Scene {
 
             my.sprite.player.body.setAccelerationX(this.ACCELERATION);
             my.sprite.player.anims.play('walk', true);
-
-            my.vfx.walking.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
-
-            my.vfx.walking.setParticleSpeed(this.PARTICLE_VELOCITY, 0);
 
             // Only play smoke effect if touching the ground
             if (my.sprite.player.body.blocked.down) {
@@ -331,64 +335,60 @@ class Platformer extends Phaser.Scene {
             my.vfx.walking.stop();
         }
 
-        // Player jumping
-        if(my.sprite.player.body.velocity.y < 0 && this.playerHealth > 0) {
-            my.sprite.player.anims.play('jump');
-            this.airTime++;
-
-            my.vfx.jumping.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
-            my.vfx.jumping.setParticleSpeed(this.PARTICLE_VELOCITY, 0);
-            my.vfx.jumping.start();
-        }
 
         // Player jump input
         if(my.sprite.player.body.blocked.down && Phaser.Input.Keyboard.JustDown(controls.up) && this.playerHealth > 0) {
             my.sprite.player.body.setVelocityY(this.JUMP_VELOCITY);
             my.sfx.jump.play();
+            my.vfx.jumping.start();
+            this.platformCollision.active = false;
+        }
+
+        // Player jumping
+        if(my.sprite.player.body.velocity.y < 0 && this.playerHealth > 0) {
+            my.sprite.player.anims.play('jump');
+            this.airTime++;
         }
 
         // Player falling
         if (my.sprite.player.body.velocity.y > 0 && this.playerHealth > 0){
             my.sprite.player.anims.play('fall');
             this.isLanding = true;
+            this.platformCollision.active = true;
         }
 
         // Player landing
         if (this.isLanding && my.sprite.player.body.blocked.down){
-            this.cameras.main.shake(0.1*SECONDS, this.shakeVector.scale(this.airTime * 0.05));
+            if (this.airTime > this.maxAirTime){ this.airTime = this.maxAirTime}
+            this.cameras.main.shake(this.shakeLength*SECONDS, this.shakeVector.scale(this.airTime * this.shakeStrength));
             this.shakeVector.y = this.shakeY;
             this.isLanding = false;
             this.airTime = 0;
             my.sfx.playerLand.play();
-            my.vfx.jumping.stop();
+            my.vfx.landing.start()
         }
 
-        if (controls.dash.isDown && !this.dashUsed && this.playerHealth > 0){
+        // Dash
+        if (controls.dash.isDown && this.playerHealth > 0){
             // Increase player's max speed for the dash
             my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX+this.DASH_STRENGTH, this.MaxSpeedY);
 
             // Dashing left
             if (my.sprite.player.body.velocity.x < 0){
                 my.sprite.player.body.setVelocityX(-this.DASH_STRENGTH)
+                my.vfx.dashing.start();
+                my.sfx.dash.play();
             }
             // Dashing right
             else if (my.sprite.player.body.velocity.x > 0){
                 my.sprite.player.body.setVelocityX(this.DASH_STRENGTH);
+                my.vfx.dashing.start();
+                my.sfx.dash.play();
             }
-            my.vfx.dashing.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
-            my.vfx.dashing.setParticleSpeed(this.PARTICLE_VELOCITY, 0);
-            my.vfx.dashing.start();
-            this.dash_length = this.MAX_DASH_LENGTH;
-            this.dashUsed = true;
-            console.log("dash!")
         }
-        if (this.dashUsed){
-            this.dash_length--;
-        }
-        if (this.dash_length <= 0){
+        else {
             my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX, this.MaxSpeedY);
             my.vfx.dashing.stop();
-            this.dashUsed = false;
         }
 
     }
