@@ -4,6 +4,7 @@ class Load extends Phaser.Scene {
     }
 
     preload() {
+        
         this.load.setPath("./assets/");
 
         // Load characters spritesheet
@@ -69,18 +70,6 @@ class Load extends Phaser.Scene {
             frames: [
                 { frame: "tile_0262.png"}
             ],
-        });
-
-        this.anims.create({
-            key: 'grass_shake',
-            defaultTextureKey: "tilemap_sheet",
-            frames: [
-                {frame: 18, // Grass key frame 1
-                frame: 38 // Grass key frame 2
-                }
-            ],
-            frameRate: 15,
-            repeat: -1
         });
 
         this.anims.create({

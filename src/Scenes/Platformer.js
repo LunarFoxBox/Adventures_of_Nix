@@ -34,13 +34,18 @@ class Platformer extends Phaser.Scene {
         this.deathTime = 100;
     }
 
+    preload() {
+        this.load.scenePlugin('AnimatedTiles', './lib/AnimatedTiles.js', 'animatedTiles', 'animatedTiles');
+    }
+    
+
     create() {
 
         // sfx
-        my.sfx.jump = this.sound.add('jump', {volume: 0.4});
+        my.sfx.jump = this.sound.add('jump', {volume: 0.3});
         my.sfx.coinPickup = this.sound.add('coin_pickup', {volume: 0.7});
         my.sfx.playerHurt = this.sound.add('player_hurt', {volume: 0.5});
-        my.sfx.playerLand = this.sound.add('player_land', {volume: 0.3})
+        my.sfx.playerLand = this.sound.add('player_land', {volume: 0.2})
         my.sfx.dash = this.sound.add('dash', {volume: 0.4});
         my.sfx.mainMusic = this.sound.add('main_music', {volume: 0.1});
         
@@ -52,7 +57,7 @@ class Platformer extends Phaser.Scene {
         // Create a new tilemap game object which uses 18x18 pixel tiles, and is
         // 45 tiles wide and 25 tiles tall.
         this.map = this.add.tilemap("level_1", SPRITE_SIZE, SPRITE_SIZE, 140, 30);
-
+        
         // Add a tileset to the map
         // First parameter: name we gave the tileset in Tiled
         // Second parameter: key for the tilesheet (from this.load.image in Load.js)
@@ -66,6 +71,13 @@ class Platformer extends Phaser.Scene {
         
         // Create background layer
         this.backgroundLayer = this.map.createLayer("Background", this.tileset, 0, 0);
+
+        // Create grass layer
+        this.grassLayer = this.map.createLayer("Grass", this.tileset, 0, 0);
+        
+        // Animate grass
+        this.animatedTiles.init(this.map);
+
 
         // Make it collidable
         this.groundLayer.setCollisionByProperty({
