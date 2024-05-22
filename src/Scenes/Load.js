@@ -4,7 +4,9 @@ class Load extends Phaser.Scene {
     }
 
     preload() {
-        
+        //  Text object to display the Score
+        let info = this.add.text(750, 300, `Loading`, { font: '100px Lexend', fill: '#FFFFFF'}).setPadding(12);
+        info.active = true;
         this.load.setPath("./assets/");
 
         this.load.image("button", "buttonLong_blue.png");
@@ -25,7 +27,7 @@ class Load extends Phaser.Scene {
 
         this.load.audio("jump", "jump.wav"); // Created
         this.load.audio("coin_pickup", "pickup_coin.wav"); // Created
-        this.load.audio('player_hurt', 'hurt.wav'); // Created
+        this.load.audio('player_hurt', 'Hurt.wav'); // Created
         this.load.audio('player_land', 'impact.wav'); // Created
         this.load.audio('dash', 'dash.wav'); // Created
 
@@ -35,6 +37,19 @@ class Load extends Phaser.Scene {
     }
 
     create() {
+        // sfx
+        my.sfx.jump = this.sound.add('jump', {volume: 0.3});
+        my.sfx.coinPickup = this.sound.add('coin_pickup', {volume: 0.7});
+        my.sfx.playerHurt = this.sound.add('player_hurt', {volume: 0.5});
+        my.sfx.playerLand = this.sound.add('player_land', {volume: 0.2})
+        my.sfx.dash = this.sound.add('dash', {volume: 0.4});
+        my.sfx.mainMusic = this.sound.add('main_music', {volume: 0.1});
+        
+        my.sfx.mainMusic.loop = true;
+        my.sfx.mainMusic.play();
+
+
+        // Animations
         this.anims.create({
             key: 'walk',
             frames: this.anims.generateFrameNames('platformer_characters', {
@@ -81,22 +96,8 @@ class Load extends Phaser.Scene {
             ],
         });
 
-        // sfx
-        my.sfx.jump = this.sound.add('jump', {volume: 0.3});
-        my.sfx.coinPickup = this.sound.add('coin_pickup', {volume: 0.7});
-        my.sfx.playerHurt = this.sound.add('player_hurt', {volume: 0.5});
-        my.sfx.playerLand = this.sound.add('player_land', {volume: 0.2})
-        my.sfx.dash = this.sound.add('dash', {volume: 0.4});
-        my.sfx.mainMusic = this.sound.add('main_music', {volume: 0.1});
         
-        my.sfx.mainMusic.loop = true;
-        my.sfx.mainMusic.play();
-
          // ...and pass to the next Scene
          this.scene.start("mainmenu");
-    }
-
-    // Never get here since a new scene is started in create()
-    update() {
     }
 }

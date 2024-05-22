@@ -14,12 +14,12 @@ class Health extends Phaser.Scene{
         let game = this.scene.get('platformerScene');
 
         
-        //  Listen for events from it
-        game.events.on('death', ()=>{
+        // Reset player's health
+        game.events.on('reset', ()=>{
             this.health = 3;
             info.setText(`Health - ${this.health}`);
         });
-
+        // Lower player's health
         game.events.on('hurt', ()=>{
             this.health -= 1;
             info.setText(`Health - ${this.health}`);
@@ -43,21 +43,20 @@ class Score extends Phaser.Scene{
         let game = this.scene.get('platformerScene');
 
         
-        //  Listen for events from it
+        //  Add points for collecting a coin
         game.events.on('got_coin', ()=> {
-
             this.score += 10;
             info.setText(`Score - ${this.score}`);
 
         });
-
-        game.events.on('death', ()=>{
-            this.score = 0;
-            info.setText(`Score - ${this.score}`);
-        });
-
+        // Add points for collecting a gem
         game.events.on('got_gem', ()=>{
             this.score += 50;
+            info.setText(`Score - ${this.score}`);
+        });
+        // Reset the player's score
+        game.events.on('reset', ()=>{
+            this.score = 0;
             info.setText(`Score - ${this.score}`);
         });
     }

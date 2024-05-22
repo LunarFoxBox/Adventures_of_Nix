@@ -4,19 +4,21 @@ class Platformer extends Phaser.Scene {
     }
 
     preload() {
+        // Preload for animating tiles
         this.load.scenePlugin('AnimatedTiles', './lib/AnimatedTiles.js', 'animatedTiles', 'animatedTiles');
     }
 
     init() {
         // variables and settings
-        this.MaxSpeedX = 100; // Max Player Speed
-        this.MaxSpeedY = 1200;
-        this.physics.world.TILE_BIAS = 20; // How strong the tiles keep things from passing through
+        this.MaxSpeedX = 100; // Max player horizontal speed
+        this.MaxSpeedY = 1200; // Max player vertical speed
+        this.physics.world.TILE_BIAS = 24; // How strong the tiles keep things from passing through
         this.ACCELERATION = 700; // Player Acceleration
         this.DRAG = 1800;    // DRAG < ACCELERATION = icy slide
         this.physics.world.gravity.y = 2000;
         this.JUMP_VELOCITY = -500; // How heigh the player jumps
 
+        // Screen shake variables
         this.shakeY = 0.005 // Y axis for camera shake when landing
         this.isLanding = false; // Keeps track of if the player is landing or not
         this.airTime = 0; // ticks in air
@@ -27,6 +29,7 @@ class Platformer extends Phaser.Scene {
 
         this.PARTICLE_VELOCITY = 50;
 
+        // Dash variables
         this.DASH_STRENGTH = 400;
         this.isDashing = false;
         this.maxDashDuration = 60;
@@ -34,26 +37,30 @@ class Platformer extends Phaser.Scene {
         this.maxDashCooldown = 180;
         this.dashCooldown = this.maxDashCooldown;
 
+        // Tracks if the player can double jump
+        this.canDoubleJump = true;
+
         this.hasPowerUp = false; // Bool to check if powerUp is collected
         this.powerUpStrength = 1.3; // Strength of powerup
         this.powerUpMaxDuration = 10 * 60; // Ticks that powerup is active for
         this.powerUpDuration = 0;
         this.powerUpFirstRun = true;
 
-
+        // Vertical Strength of spring
         this.SPRING_STRENGTH = -1200;
 
+        // Player Health variables
         this.playerHealth = 3;
         this.maxInvincibilityTime = 90;
         this.invincibilityTime = this.maxInvincibilityTime;
-        this.deathTime = 100;
+        this.deathTime = 60 * 3;
 
-        this.playerScore = 0;
+        // Reset UI elements
+        this.events.emit('reset');
     }
     
 
     create() {
-
         this.map = this.add.tilemap("level_1", SPRITE_SIZE, SPRITE_SIZE, 140, 30);
         
         // Add a tileset to the map
@@ -77,7 +84,7 @@ class Platformer extends Phaser.Scene {
         this.animatedTiles.init(this.map);
 
 
-        // Make it collidable
+        // Make ground and platforms collidable
         this.groundLayer.setCollisionByProperty({
             collides: true
         });
@@ -167,13 +174,6 @@ class Platformer extends Phaser.Scene {
 
 
 
-        // debug key listener (assigned to D key)
-        this.input.keyboard.on('keydown-V', () => {
-            this.physics.world.drawDebug = this.physics.world.drawDebug ? true : false;
-            //this.physics.world.debugGraphic.clear();
-        }, this);
-
-
 
         // VFX
         // movement vfx
@@ -191,28 +191,31 @@ class Platformer extends Phaser.Scene {
         my.vfx.walking.stop();
 
         // Dash vfx
-        my.vfx.dashing = this.add.particles(0, 0, "particles", {
-            frame: ['magic_05.png'],
-            scale: {start: 0.05, end: 0.08},
-            lifespan: 350,
-            alpha: {start: 1, end: 0.1},
-            stopAfter: 10
+        my.vfx.dashing = this.add.particles(0, 0, "platformer_characters", {
+            frame: ['tile_0260.png'],
+            scale: {start: 1, end: 1},
+            lifespan: 300,
+            alpha: {start: 0.5, end: 0.1},
+            stopAfter: 40
         });
         my.vfx.dashing.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
         my.vfx.dashing.setParticleSpeed(0, 0);
         my.vfx.dashing.stop();
 
+        // Jump vfx
         my.vfx.jumping = this.add.particles(0, 0, "particles", {
-            frame: ['magic_01.png', 'magic_02.png'],
-            scale: {start: 0.07, end: 0.07},
-            lifespan: 400,
-            alpha: {start: 1, end: 0.1},
+            frame: ['spark_05.png', 'spark_06.png'],
+            scale: {start: 0.08, end: 0.08},
+            delay: 200,
+            lifespan: 100,
+            alpha: {start: 0.5, end: 0.1},
             stopAfter: 2
         });
         my.vfx.jumping.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
         my.vfx.jumping.setParticleSpeed(0, 0);
         my.vfx.jumping.stop();
 
+        // Landing vfx
         my.vfx.landing = this.add.particles(0, 0, "particles", {
             frame: ['dirt_02.png'],
             scale: {start: 0.02, end: 0.05},
@@ -224,6 +227,7 @@ class Platformer extends Phaser.Scene {
         my.vfx.landing.setParticleSpeed(100, 0);
         my.vfx.landing.stop();
 
+        // Coin vfx
         my.vfx.coinPickup = this.add.particles(0, 0, "particles", {
             frame: ['light_01.png', 'light_02.png', 'light_03.png'],
             scale: {start: 0.09, end: 0.05},
@@ -233,6 +237,7 @@ class Platformer extends Phaser.Scene {
         });
         my.vfx.coinPickup.stop();
 
+        // Hurt vfx
         my.vfx.hurt = this.add.particles(0, 0, 'particles', {
             frame: ['magic_03.png', 'magic_04.png'],
             
@@ -263,6 +268,8 @@ class Platformer extends Phaser.Scene {
                 my.vfx.hurt.startFollow(my.sprite.player, my.sprite.player.displayWidth/2, my.sprite.player.displayHeight/2, false);
                 my.sfx.playerHurt.play();
                 my.vfx.hurt.start();
+
+                // Subtract one from player health and give them temporary invincibility
                 this.playerHealth--;
                 this.invincibilityTime = this.maxInvincibilityTime;
                 this.events.emit('hurt');
@@ -271,6 +278,7 @@ class Platformer extends Phaser.Scene {
         
         // Spring collision
         this.physics.add.overlap(my.sprite.player, this.springGroup, (obj1, obj2) => {
+            // Launch the player up by the spring's strength
             my.sprite.player.body.setVelocityY(this.SPRING_STRENGTH);
         })
 
@@ -282,17 +290,15 @@ class Platformer extends Phaser.Scene {
             this.events.emit('got_gem');
         })
 
-        // End Point collision
+        // End Point collision (Player Win condition)
         this.physics.add.overlap(my.sprite.player, this.endPoint, (obj1, obj2) => {
-            console.log("hit end point!")
-            this.scene.stop();
             this.scene.start('winScreen');
         })
 
 
 
          // Camera Settings
-         this.cameras.main.startFollow(my.sprite.player, true, 0.25, 0.25); // (target, [,roundPixels][,lerpX][,lerpY])
+         this.cameras.main.startFollow(my.sprite.player, true, 0.25, 0.25);
          this.cameras.main.setViewport(400, 0, this.map.widthInPixels/2, this.map.heightInPixels);
          this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
          this.cameras.main.setDeadzone(50, 25);
@@ -334,19 +340,28 @@ class Platformer extends Phaser.Scene {
             }
             
         });
-        console.log(my.sprite.player.x, my.sprite.player.y);
+
+        // Double Jump
+        this.doubleJump = ()=>{
+            if (this.canDoubleJump && Phaser.Input.Keyboard.JustDown(controls.up)){
+                this.canDoubleJump = false;
+                my.sprite.player.body.setVelocityY(this.JUMP_VELOCITY);
+            }
+        }
     }
     
     update() {
         this.invincibilityTime--;
         
+        // Check if the player is not alive
         if (this.playerHealth <= 0){
+            // Set the player to death animation and stop them in place to avoid sliding
             my.sprite.player.anims.play('player_death', true);
             my.sprite.player.body.setAcceleration(0,0);
+            
+            // Wait a moment before bringing up death screen
             if (this.deathTime <= 0){
                 my.sprite.player.anims.stop();
-                this.events.emit('death');
-                this.scene.stop();
                 this.scene.start('deathScreen');
             }
             else{
@@ -354,23 +369,10 @@ class Platformer extends Phaser.Scene {
             }
         }
 
-        if (this.isDashing){
-            this.dashDuration--;
-            if (this.dashDuration <= 0){
-                this.isDashing = false;
-                this.dashCooldown = this.maxDashCooldown;
-                my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX, this.MaxSpeedY);
-            }
-        }
-        else{
-            this.dashCooldown--;
-        }
-
-
         // Activate the power up's effect if it was collected
         if (this.hasPowerUp){
             if (this.powerUpFirstRun){
-                this.JUMP_VELOCITY = this.JUMP_VELOCITY * this.powerUpStrength;
+                this.JUMP_VELOCITY *= this.powerUpStrength;
                 this.powerUpFirstRun = false;
             }
             this.powerUpDuration--; // Decrease the power up's duration
@@ -380,10 +382,9 @@ class Platformer extends Phaser.Scene {
                 this.powerUpDuration = this.powerUpMaxDuration;
                 this.hasPowerUp = false;
                 this.powerUpFirstRun = true;
-                this.JUMP_VELOCITY = this.JUMP_VELOCITY / this.powerUpStrength;
+                this.JUMP_VELOCITY /= this.powerUpStrength;
             }
         }
-
 
 
         // Move Left
@@ -395,7 +396,6 @@ class Platformer extends Phaser.Scene {
             // Only play smoke effect if touching the ground
             if (my.sprite.player.body.blocked.down) {
                 my.vfx.walking.start();
-
             }
 
         // Move Right
@@ -407,9 +407,7 @@ class Platformer extends Phaser.Scene {
 
             // Only play smoke effect if touching the ground
             if (my.sprite.player.body.blocked.down) {
-
                 my.vfx.walking.start();
-
             }
 
         // Idling
@@ -419,6 +417,19 @@ class Platformer extends Phaser.Scene {
             my.sprite.player.anims.play('idle');
 
             my.vfx.walking.stop();
+        }
+
+        // Dashing
+        if (this.isDashing){
+            this.dashDuration--;
+            if (this.dashDuration <= 0){
+                this.isDashing = false;
+                this.dashCooldown = this.maxDashCooldown;
+                my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX, this.MaxSpeedY);
+            }
+        }
+        else{
+            this.dashCooldown--;
         }
 
 
@@ -434,6 +445,8 @@ class Platformer extends Phaser.Scene {
         if(my.sprite.player.body.velocity.y < 0 && this.playerHealth > 0) {
             my.sprite.player.anims.play('jump');
             this.airTime++;
+            // Check if player is double jumping
+            this.doubleJump();
         }
 
         // Player falling
@@ -441,16 +454,24 @@ class Platformer extends Phaser.Scene {
             my.sprite.player.anims.play('fall');
             this.isLanding = true;
             this.platformCollision.active = true;
+            // Check if player is doubling jumping
+            this.doubleJump();
         }
 
         // Player landing
         if (this.isLanding && my.sprite.player.body.blocked.down){
-            if (this.airTime > this.maxAirTime){ this.airTime = this.maxAirTime}
-            my.sprite.player.body.velocity.x = 0;
+            if (this.airTime > this.maxAirTime){ this.airTime = this.maxAirTime} // Cap the airtime modifier
+            // Shake camera on landing
             this.cameras.main.shake(this.shakeLength*SECONDS, this.shakeVector.scale(this.airTime * this.shakeStrength));
             this.shakeVector.y = this.shakeY;
+
+            // Stop player and reset jump related variables
+            my.sprite.player.body.velocity.x = 0;
+            this.canDoubleJump = true;
             this.isLanding = false;
             this.airTime = 0;
+
+            // Play effects on landing
             my.sfx.playerLand.play();
             my.vfx.landing.start()
         }

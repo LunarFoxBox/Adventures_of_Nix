@@ -11,19 +11,25 @@ class MainMenu extends Phaser.Scene {
         let playButton = this.add.image(0, 0, 'button');
         let controlsButton = this.add.image(0, 0, 'button');
         let creditsButton = this.add.image(0, 0, 'button');
+        let quitButton = this.add.image(0, 0, 'button');
 
         // Create Button Text
         let playText = this.add.text(-30, -15, `Play`, { font: '30px Lexend', fill: '#FFFFFF'});
         let controlsText = this.add.text(-40, -15, 'Controls', {font: '30px Lexend', fill: '#FFFFFF'});
         let creditsText = this.add.text(-40, -15, 'Credits', {font: '30px Lexend', fill: '#FFFFFF'});
+        let quitText = this.add.text(-40, -15, 'Quit', {font: '30px Lexend', fill: '#FFFFFF'});
 
-        this.add.container(800, 300, [ playButton, playText ]);
-        this.add.container(800, 400, [ controlsButton, controlsText ]);
-        this.add.container(800, 500, [ creditsButton, creditsText ]);
+        // Group objects and place them at x, y
+        this.add.container(900, 300, [ playButton, playText ]);
+        this.add.container(900, 400, [ controlsButton, controlsText ]);
+        this.add.container(900, 500, [ creditsButton, creditsText ]);
+        this.add.container(900, 600, [ quitButton, quitText ]);
 
+        // Set the buttons to be interactive
         playButton.setInteractive();
         controlsButton.setInteractive();
         creditsButton.setInteractive();
+        quitButton.setInteractive();
 
         // If play button is clicked, start the game
         playButton.once('pointerup', ()=> {
@@ -39,6 +45,13 @@ class MainMenu extends Phaser.Scene {
         creditsButton.once('pointerup', ()=> {
             this.scene.start('creditsScreen');
         });
+
+        // If quit button is clicked, quit the game
+        quitButton.once('pointerup', ()=> {
+            // Destroy all game elements and close the window
+            game.destroy(true, true);
+            close();
+        })
     }
 }
 
@@ -49,10 +62,11 @@ class Controls extends Phaser.Scene {
     }
 
     create(){
-        this.add.text(500, 100, `Controls\n- - - - - - -\n'W' = Jump\n'A' = Left\n'D' = Right\n'Spacebar' = Dash\n\n\nClick to return to main menu`, { font: '40px Lexend', fill: '#FFFFFF'})
+        // Controls Text
+        this.add.text(500, 100, `Controls\n- - - - - - -\n'W' = Jump\n'W' while in the air = Double Jump\n'A' = Move Left\n'D' = Move Right\n'Spacebar' = Dash\n\n\nClick to return to main menu`, { font: '50px Lexend', fill: '#FFFFFF'})
 
-        this.input.once('pointerup', (event)=>
-        {
+        // On click go to menu scene
+        this.input.once('pointerup', (event)=> {
             this.scene.start('mainmenu');
         });
     }
@@ -65,10 +79,11 @@ class Credits extends Phaser.Scene {
     }
 
     create(){
-        this.add.text(500, 100, `Credits\n- - - - - - -\nVisuals provided by Kenny Assets through\n'1-Bit Pack'\n'Particle Pack'\n'UI Pack: RPG Expansion'\n\nMusic: 'And The Journey Begins' by xDeviruchi\n\nSound Effects by Jade Hernandez\n\n\nClick to return to main menu`, { font: '40px Lexend', fill: '#FFFFFF'})
+        // Credit Text
+        this.add.text(500, 100, `Credits\n- - - - - - -\nVisuals provided by Kenny Assets through\n'1-Bit Pack'\n    (https://kenney.nl/assets/1-bit-platformer-pack)\n'Particle Pack'\n    (https://kenney.nl/assets/particle-pack)\n'UI Pack: RPG Expansion'\n    (https://kenney.nl/assets/ui-pack-rpg-expansion)\n\nMusic 'And The Journey Begins' by xDeviruchi\n     (https://xdeviruchi.itch.io/8-bit-fantasy-adventure-music-pack)\n\nSound Effects by Jade Hernandez\n\n\nClick to return to main menu`, { font: '30px Lexend', fill: '#FFFFFF'})
 
-        this.input.once('pointerup', (event)=>
-        {
+        // On click go to menu scene
+        this.input.once('pointerup', (event)=> {
             this.scene.start('mainmenu');
         });
     }

@@ -18,11 +18,11 @@
             "scaleInEditor": 1
         },
         "level_1.tmx": {
-            "scale": 2,
-            "selectedLayer": 5,
+            "scale": 1.5,
+            "selectedLayer": 4,
             "viewCenter": {
-                "x": 236.5,
-                "y": 669.25
+                "x": 354,
+                "y": 574.3333333333333
             }
         },
         "level_1.tmx#monochrome_tilemap_packed": {
