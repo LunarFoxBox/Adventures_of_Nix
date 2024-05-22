@@ -1,13 +1,10 @@
-// Jim Whitehead
-// Created: 4/14/2024
-// Phaser: 3.70.0
+// Jade Hernandez
+// Created: 5/14/24
 //
-// Cubey
+// Adventures of Nix
 //
-// An example of putting sprites on the screen using Phaser
-// 
-// Art assets from Kenny Assets "Shape Characters" set:
-// https://kenney.nl/assets/shape-characters
+// A simple platformer game with a single level
+
 
 // debug with extreme prejudice
 "use strict"
