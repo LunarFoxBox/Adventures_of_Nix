@@ -19,10 +19,10 @@
         },
         "level_1.tmx": {
             "scale": 2,
-            "selectedLayer": 0,
+            "selectedLayer": 5,
             "viewCenter": {
-                "x": 239.5,
-                "y": 574.5
+                "x": 236.5,
+                "y": 669.25
             }
         },
         "level_1.tmx#monochrome_tilemap_packed": {
@@ -38,7 +38,7 @@
             "scaleInDock": 1
         }
     },
-    "last.exportedFilePath": "C:/Users/lunar/Documents/School/Courses/CMPM/120/Games/Adventures_of_Nix/assets",
+    "last.exportedFilePath": "C:/Users/Lunar Fox/Documents/School/CMPM/120/Game Assignments/Adventures_of_Nix/assets",
     "last.imagePath": "C:/Users/lunar/Documents/School/Courses/CMPM/120/Games/Adventures_of_Nix/assets",
     "map.height": 120,
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",

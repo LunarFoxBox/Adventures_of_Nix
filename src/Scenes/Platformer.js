@@ -3,13 +3,17 @@ class Platformer extends Phaser.Scene {
         super("platformerScene");
     }
 
+    preload() {
+        this.load.scenePlugin('AnimatedTiles', './lib/AnimatedTiles.js', 'animatedTiles', 'animatedTiles');
+    }
+
     init() {
         // variables and settings
         this.MaxSpeedX = 100; // Max Player Speed
         this.MaxSpeedY = 1200;
         this.physics.world.TILE_BIAS = 20; // How strong the tiles keep things from passing through
         this.ACCELERATION = 700; // Player Acceleration
-        this.DRAG = 1200;    // DRAG < ACCELERATION = icy slide
+        this.DRAG = 1800;    // DRAG < ACCELERATION = icy slide
         this.physics.world.gravity.y = 2000;
         this.JUMP_VELOCITY = -500; // How heigh the player jumps
 
@@ -17,45 +21,39 @@ class Platformer extends Phaser.Scene {
         this.isLanding = false; // Keeps track of if the player is landing or not
         this.airTime = 0; // ticks in air
         this.maxAirTime = 200; // Max amount of ticks for air time
-
         this.shakeVector = new Phaser.Math.Vector2(0, this.shakeY);
-        this.shakeStrength = 0.08;
-        this.shakeLength = 0.15;
+        this.shakeStrength = 0.05;
+        this.shakeLength = 0.05;
 
         this.PARTICLE_VELOCITY = 50;
 
-        this.DASH_STRENGTH = 800;
+        this.DASH_STRENGTH = 400;
+        this.isDashing = false;
+        this.maxDashDuration = 60;
+        this.dashDuration = this.maxDashDuration;
+        this.maxDashCooldown = 180;
+        this.dashCooldown = this.maxDashCooldown;
+
+        this.hasPowerUp = false; // Bool to check if powerUp is collected
+        this.powerUpStrength = 1.3; // Strength of powerup
+        this.powerUpMaxDuration = 10 * 60; // Ticks that powerup is active for
+        this.powerUpDuration = 0;
+        this.powerUpFirstRun = true;
+
+
         this.SPRING_STRENGTH = -1200;
 
         this.playerHealth = 3;
-        this.maxInvincibilityTime = 60;
+        this.maxInvincibilityTime = 90;
         this.invincibilityTime = this.maxInvincibilityTime;
-
         this.deathTime = 100;
-    }
 
-    preload() {
-        this.load.scenePlugin('AnimatedTiles', './lib/AnimatedTiles.js', 'animatedTiles', 'animatedTiles');
+        this.playerScore = 0;
     }
     
 
     create() {
 
-        // sfx
-        my.sfx.jump = this.sound.add('jump', {volume: 0.3});
-        my.sfx.coinPickup = this.sound.add('coin_pickup', {volume: 0.7});
-        my.sfx.playerHurt = this.sound.add('player_hurt', {volume: 0.5});
-        my.sfx.playerLand = this.sound.add('player_land', {volume: 0.2})
-        my.sfx.dash = this.sound.add('dash', {volume: 0.4});
-        my.sfx.mainMusic = this.sound.add('main_music', {volume: 0.1});
-        
-        my.sfx.mainMusic.loop = true;
-        my.sfx.mainMusic.play();
-
-
-
-        // Create a new tilemap game object which uses 18x18 pixel tiles, and is
-        // 45 tiles wide and 25 tiles tall.
         this.map = this.add.tilemap("level_1", SPRITE_SIZE, SPRITE_SIZE, 140, 30);
         
         // Add a tileset to the map
@@ -95,6 +93,13 @@ class Platformer extends Phaser.Scene {
             frame: 216
         });
 
+        // Create End Point
+        this.endPoint = this.map.createFromObjects("Special", {
+            name: "end_point",
+            key: "tilemap_sheet",
+            frame: 56
+        });
+
 
         // Find coins in the "Objects" layer in Phaser
         // Look for them by finding objects with the name "coin"
@@ -107,17 +112,25 @@ class Platformer extends Phaser.Scene {
             frame: 22
         });
 
+        // Create spikes from objects
         this.spikes = this.map.createFromObjects("Spikes", {
             name: "spike",
             key: "tilemap_sheet",
             frame: 183
         });
         
-
+        // Create springs from objects
         this.springs = this.map.createFromObjects("Springs", {
             name: "spring",
             key: "tilemap_sheet",
             frame: 163
+        });
+
+        // Create gems from objects
+        this.gems = this.map.createFromObjects("Gems", {
+            name: "gem",
+            key: "tilemap_sheet",
+            frame: 102
         });
 
 
@@ -126,13 +139,15 @@ class Platformer extends Phaser.Scene {
         this.physics.world.enable(this.coins, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.spikes, Phaser.Physics.Arcade.STATIC_BODY);
         this.physics.world.enable(this.springs, Phaser.Physics.Arcade.STATIC_BODY);
+        this.physics.world.enable(this.gems, Phaser.Physics.Arcade.STATIC_BODY);
+        this.physics.world.enable(this.endPoint, Phaser.Physics.Arcade.STATIC_BODY);
 
 
-        // Create a Phaser group out of the array this.coins
-        // This will be used for collision detection below.
+        // Create Phaser groups for objects that will be used for collision detection
         this.coinGroup = this.add.group(this.coins);
         this.spikeGroup = this.add.group(this.spikes)
         this.springGroup = this.add.group(this.springs);
+        this.gemGroup = this.add.group(this.gems);
         
         
 
@@ -142,44 +157,22 @@ class Platformer extends Phaser.Scene {
         my.sprite.player.setCollideWorldBounds(false);
         my.sprite.player.setSize(SPRITE_SIZE, SPRITE_SIZE, true);
         my.sprite.player.setOffset(0, 0);
+
         // Set player's max speed
         my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX, this.MaxSpeedY);
 
-        // Enable collision handling
+        // Enable collision handling for ground and platforms
         this.groundCollision = this.physics.add.collider(my.sprite.player, this.groundLayer);
         this.platformCollision = this.physics.add.collider(my.sprite.player, this.platformLayer);
-
-
-        // set up control input
-        controls = this.input.keyboard.addKeys(
-            {
-            'up': Phaser.Input.Keyboard.KeyCodes.W,
-            'down': Phaser.Input.Keyboard.KeyCodes.S,
-            'left': Phaser.Input.Keyboard.KeyCodes.A,
-            'right': Phaser.Input.Keyboard.KeyCodes.D,
-            'dash': Phaser.Input.Keyboard.KeyCodes.SPACE
-        });
-
-        // UI Health
-        this.hearts = this.map.createFromObjects("UI", {
-            name: 'heart',
-            key: 'tilemap_sheet',
-            frame: 40,
-            x: my.sprite.player.body.x - 500,
-            y: my.sprite.player.body.y - 200,
-            follow: my.sprite.player,  // a game object or an arcade physics object
-        });
 
 
 
         // debug key listener (assigned to D key)
         this.input.keyboard.on('keydown-V', () => {
-            this.physics.world.drawDebug = this.physics.world.drawDebug ? false : true;
-            this.physics.world.debugGraphic.clear();
+            this.physics.world.drawDebug = this.physics.world.drawDebug ? true : false;
+            //this.physics.world.debugGraphic.clear();
         }, this);
 
-
-        
 
 
         // VFX
@@ -201,9 +194,9 @@ class Platformer extends Phaser.Scene {
         my.vfx.dashing = this.add.particles(0, 0, "particles", {
             frame: ['magic_05.png'],
             scale: {start: 0.05, end: 0.08},
-            maxAliveParticles: 8,
             lifespan: 350,
-            alpha: {start: 1, end: 0.1}, 
+            alpha: {start: 1, end: 0.1},
+            stopAfter: 10
         });
         my.vfx.dashing.startFollow(my.sprite.player, my.sprite.player.displayWidth/2-10, my.sprite.player.displayHeight/2-5, false);
         my.vfx.dashing.setParticleSpeed(0, 0);
@@ -251,17 +244,20 @@ class Platformer extends Phaser.Scene {
         my.vfx.hurt.stop();
 
         
-        
 
-        // Handle collision detection with coins
+        // Coin collision
         this.physics.add.overlap(my.sprite.player, this.coinGroup, (obj1, obj2) => {
+            // Play effects on coin pickup
             my.vfx.coinPickup.x = obj2.x;
             my.vfx.coinPickup.y = obj2.y;
             my.sfx.coinPickup.play();
             my.vfx.coinPickup.start();
-            obj2.destroy(); // remove coin on overlap
+
+            obj2.destroy();
+            this.events.emit('got_coin');
         });
 
+        // Spike collision
         this.physics.add.overlap(my.sprite.player, this.spikeGroup, (obj1, obj2) => {
             if (this.playerHealth > 0 && this.invincibilityTime <= 0){
                 my.vfx.hurt.startFollow(my.sprite.player, my.sprite.player.displayWidth/2, my.sprite.player.displayHeight/2, false);
@@ -269,14 +265,28 @@ class Platformer extends Phaser.Scene {
                 my.vfx.hurt.start();
                 this.playerHealth--;
                 this.invincibilityTime = this.maxInvincibilityTime;
+                this.events.emit('hurt');
             }
         });
-
         
-
         // Spring collision
         this.physics.add.overlap(my.sprite.player, this.springGroup, (obj1, obj2) => {
             my.sprite.player.body.setVelocityY(this.SPRING_STRENGTH);
+        })
+
+        // Gem collision
+        this.physics.add.overlap(my.sprite.player, this.gemGroup, (obj1, obj2) => {
+            this.hasPowerUp = true;
+            this.powerUpDuration += this.powerUpMaxDuration;
+            obj2.destroy();
+            this.events.emit('got_gem');
+        })
+
+        // End Point collision
+        this.physics.add.overlap(my.sprite.player, this.endPoint, (obj1, obj2) => {
+            console.log("hit end point!")
+            this.scene.stop();
+            this.scene.start('winScreen');
         })
 
 
@@ -288,11 +298,45 @@ class Platformer extends Phaser.Scene {
          this.cameras.main.setDeadzone(50, 25);
          this.cameras.main.setZoom(SCALE);
 
-         this.input.keyboard.on(controls.dash, ()=>{
 
-         });
+         // set up control input
+        controls = this.input.keyboard.addKeys(
+            {
+            'up': Phaser.Input.Keyboard.KeyCodes.W,
+            'down': Phaser.Input.Keyboard.KeyCodes.S,
+            'left': Phaser.Input.Keyboard.KeyCodes.A,
+            'right': Phaser.Input.Keyboard.KeyCodes.D,
+        });
+
+        // Handles the dash
+        this.input.keyboard.on(`keydown-SPACE`, ()=>{
+            if (this.dashCooldown <= 0){
+                // Dashing left
+                if (my.sprite.player.body.velocity.x < 0){
+                    my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX+this.DASH_STRENGTH, this.MaxSpeedY);
+                    this.isDashing = true;
+                    this.dashDuration = this.maxDashDuration;
+
+                    my.sprite.player.body.setVelocityX(-this.DASH_STRENGTH)
+                    my.vfx.dashing.start();
+                    my.sfx.dash.play();
+                }
+                // Dashing right
+                else if (my.sprite.player.body.velocity.x > 0){
+                    my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX+this.DASH_STRENGTH, this.MaxSpeedY);
+                    this.isDashing = true;
+                    this.dashDuration = this.maxDashDuration;
+
+                    my.sprite.player.body.setVelocityX(this.DASH_STRENGTH);
+                    my.vfx.dashing.start();
+                    my.sfx.dash.play();
+                }
+            }
+            
+        });
+        console.log(my.sprite.player.x, my.sprite.player.y);
     }
-
+    
     update() {
         this.invincibilityTime--;
         
@@ -301,15 +345,46 @@ class Platformer extends Phaser.Scene {
             my.sprite.player.body.setAcceleration(0,0);
             if (this.deathTime <= 0){
                 my.sprite.player.anims.stop();
-                my.sfx.mainMusic.stop();
-                this.scene.restart();
+                this.events.emit('death');
+                this.scene.stop();
+                this.scene.start('deathScreen');
             }
             else{
                 this.deathTime--;
             }
         }
 
-        
+        if (this.isDashing){
+            this.dashDuration--;
+            if (this.dashDuration <= 0){
+                this.isDashing = false;
+                this.dashCooldown = this.maxDashCooldown;
+                my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX, this.MaxSpeedY);
+            }
+        }
+        else{
+            this.dashCooldown--;
+        }
+
+
+        // Activate the power up's effect if it was collected
+        if (this.hasPowerUp){
+            if (this.powerUpFirstRun){
+                this.JUMP_VELOCITY = this.JUMP_VELOCITY * this.powerUpStrength;
+                this.powerUpFirstRun = false;
+            }
+            this.powerUpDuration--; // Decrease the power up's duration
+
+            // End the power up's effect if it's duration has ended
+            if (this.powerUpDuration <= 0){
+                this.powerUpDuration = this.powerUpMaxDuration;
+                this.hasPowerUp = false;
+                this.powerUpFirstRun = true;
+                this.JUMP_VELOCITY = this.JUMP_VELOCITY / this.powerUpStrength;
+            }
+        }
+
+
 
         // Move Left
         if(controls.left.isDown && this.playerHealth > 0) {
@@ -319,7 +394,6 @@ class Platformer extends Phaser.Scene {
 
             // Only play smoke effect if touching the ground
             if (my.sprite.player.body.blocked.down) {
-
                 my.vfx.walking.start();
 
             }
@@ -372,6 +446,7 @@ class Platformer extends Phaser.Scene {
         // Player landing
         if (this.isLanding && my.sprite.player.body.blocked.down){
             if (this.airTime > this.maxAirTime){ this.airTime = this.maxAirTime}
+            my.sprite.player.body.velocity.x = 0;
             this.cameras.main.shake(this.shakeLength*SECONDS, this.shakeVector.scale(this.airTime * this.shakeStrength));
             this.shakeVector.y = this.shakeY;
             this.isLanding = false;
@@ -379,29 +454,5 @@ class Platformer extends Phaser.Scene {
             my.sfx.playerLand.play();
             my.vfx.landing.start()
         }
-
-        // Dash
-        if (controls.dash.isDown && this.playerHealth > 0){
-            // Increase player's max speed for the dash
-            my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX+this.DASH_STRENGTH, this.MaxSpeedY);
-
-            // Dashing left
-            if (my.sprite.player.body.velocity.x < 0){
-                my.sprite.player.body.setVelocityX(-this.DASH_STRENGTH)
-                my.vfx.dashing.start();
-                my.sfx.dash.play();
-            }
-            // Dashing right
-            else if (my.sprite.player.body.velocity.x > 0){
-                my.sprite.player.body.setVelocityX(this.DASH_STRENGTH);
-                my.vfx.dashing.start();
-                my.sfx.dash.play();
-            }
-        }
-        else {
-            my.sprite.player.body.maxVelocity = new Phaser.Math.Vector2(this.MaxSpeedX, this.MaxSpeedY);
-            my.vfx.dashing.stop();
-        }
-
     }
 }

@@ -32,7 +32,7 @@ let config = {
     },
     width: 2240,
     height: 800,
-    scene: [Load, Platformer]
+    scene: [Load, Platformer, Score, Health, MainMenu, Controls, Credits, Win, Death]
 }
 
 var controls;

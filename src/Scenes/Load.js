@@ -7,6 +7,8 @@ class Load extends Phaser.Scene {
         
         this.load.setPath("./assets/");
 
+        this.load.image("button", "buttonLong_blue.png");
+
         // Load characters spritesheet
         this.load.atlas("platformer_characters", "platform_characters.png", "platform_characters.json");
 
@@ -25,12 +27,11 @@ class Load extends Phaser.Scene {
         this.load.audio("coin_pickup", "pickup_coin.wav"); // Created
         this.load.audio('player_hurt', 'hurt.wav'); // Created
         this.load.audio('player_land', 'impact.wav'); // Created
-        this.load.audio('dash', 'dash.wav');
+        this.load.audio('dash', 'dash.wav'); // Created
 
         // Music by xDeviruchi under Attribution-ShareAlike 4.0 International license
         // https://xdeviruchi.itch.io/8-bit-fantasy-adventure-music-pack
         this.load.audio("main_music", "xDeviruchi - And The Journey Begins .wav");
-        
     }
 
     create() {
@@ -80,8 +81,19 @@ class Load extends Phaser.Scene {
             ],
         });
 
+        // sfx
+        my.sfx.jump = this.sound.add('jump', {volume: 0.3});
+        my.sfx.coinPickup = this.sound.add('coin_pickup', {volume: 0.7});
+        my.sfx.playerHurt = this.sound.add('player_hurt', {volume: 0.5});
+        my.sfx.playerLand = this.sound.add('player_land', {volume: 0.2})
+        my.sfx.dash = this.sound.add('dash', {volume: 0.4});
+        my.sfx.mainMusic = this.sound.add('main_music', {volume: 0.1});
+        
+        my.sfx.mainMusic.loop = true;
+        my.sfx.mainMusic.play();
+
          // ...and pass to the next Scene
-         this.scene.start("platformerScene");
+         this.scene.start("mainmenu");
     }
 
     // Never get here since a new scene is started in create()
